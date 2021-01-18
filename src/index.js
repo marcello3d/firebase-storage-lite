@@ -29,7 +29,9 @@ export default class Reference {
 		this.bucket = bucket;
 		// Object names can contain characters that require encoding/decoding.
 		// but are encoded only when when passed in URIs.
-		this.objectPath = isGSPath ? objectPath || '' : decodeURIComponent(objectPath || '');
+		this.objectPath = isGSPath
+			? objectPath || ''
+			: decodeURIComponent(objectPath || '');
 		this.auth = auth;
 	}
 
@@ -41,7 +43,9 @@ export default class Reference {
 	 * @param {Object} init an options object.
 	 */
 	fetch() {
-		if (this.auth && this.auth.authorizedRequest) return this.auth.authorizedRequest(...arguments);
+		if (this.auth && this.auth.authorizedRequest) {
+			return this.auth.authorizedRequest(...arguments);
+		}
 		return fetch(...arguments);
 	}
 
@@ -110,10 +114,11 @@ export default class Reference {
 	 * Uploads a blob to the referenced location.
 	 * @param {Blob} blob The file to upload
 	 * @param {Object} metadata Custom metadata for the file
+	 * @param {boolean} multipart Do a multipart upload (defaults to blob.size > 500k)
 	 * @returns {Promise} A promise that resolves to the full object metadata.
 	 */
-	put(blob, metadata) {
-		return new UploadTask(this, blob, metadata);
+	put(blob, metadata, multipart = blob.size > 500000) {
+		return new UploadTask(this, blob, metadata, multipart);
 	}
 
 	/**
@@ -159,6 +164,11 @@ export default class Reference {
 		const data = await this.getMetadata();
 		const token = data.downloadTokens.split(',')[0];
 		const query = objectToQuery({ alt: 'media', token });
+		return baseApiURL + this.URIPath + query;
+	}
+
+	getPublicURL() {
+		const query = objectToQuery({ alt: 'media' });
 		return baseApiURL + this.URIPath + query;
 	}
 }
