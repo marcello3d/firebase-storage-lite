@@ -42,7 +42,7 @@ export default class UploadTask {
 	async start() {
 		try {
 			if (this.multipart) {
-				this.chunk = this.initMultipart();
+				this.chunk = this.init();
 				await this.chunk;
 
 				while (true) {
@@ -58,8 +58,8 @@ export default class UploadTask {
 		}
 	}
 
-	async initMultipart() {
-		const { ref, metadata, blob } = this;
+	async init() {
+		const { ref, blob } = this;
 		// More info about resumable uploads can be found here:
 		// https://developers.google.com/android/over-the-air/v1/how-tos/create-package
 		// This has nothing to do with firebase, but it seems like its the same protocol.
@@ -72,11 +72,7 @@ export default class UploadTask {
 				objectToQuery({ name: ref.objectPath, uploadType: 'resumable' }),
 			{
 				method: 'POST',
-				body: JSON.stringify({
-					...metadata,
-					name: ref.objectPath,
-					contentType: blob.type
-				}),
+				body: this.getMetadataJson(),
 				headers: {
 					'Content-Type': 'application/json; charset=utf-8',
 					'X-Goog-Upload-Protocol': 'resumable',
@@ -105,6 +101,15 @@ export default class UploadTask {
 		};
 	}
 
+	getMetadataJson() {
+		const { metadata, ref, blob } = this;
+		return JSON.stringify({
+			...metadata,
+			name: ref.objectPath,
+			contentType: blob.type
+		});
+	}
+
 	async next() {
 		const { uploadURL, granularity, offset, blob } = this;
 		const chunk = blob.slice(offset, offset + granularity);
@@ -129,17 +134,10 @@ export default class UploadTask {
 	}
 
 	async post() {
-		const { ref, metadata, blob } = this;
+		const { ref, blob } = this;
 
 		const formData = new FormData();
-		formData.append(
-			'json',
-			JSON.stringify({
-				...metadata,
-				name: ref.objectPath,
-				contentType: blob.type
-			})
-		);
+		formData.append('json', this.getMetadataJson());
 		formData.append('data', blob);
 
 		const res = await this.ref.fetch(
