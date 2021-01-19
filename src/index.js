@@ -152,7 +152,10 @@ export default class Reference {
 	updateMetadata(newMetadata) {
 		return this.fetch(baseApiURL + this.URIPath, {
 			method: 'PATCH',
-			body: JSON.stringify(newMetadata)
+			body: JSON.stringify(newMetadata),
+			headers: {
+				'Content-Type': 'application/json'
+			}
 		});
 	}
 

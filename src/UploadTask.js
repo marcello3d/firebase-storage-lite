@@ -131,14 +131,24 @@ export default class UploadTask {
 	async post() {
 		const { ref, metadata, blob } = this;
 
+		const formData = new FormData();
+		formData.append(
+			'json',
+			JSON.stringify({
+				...metadata,
+				name: ref.objectPath,
+				contentType: blob.type
+			})
+		);
+		formData.append('data', blob);
+
 		const res = await this.ref.fetch(
-			`${baseApiURL}b/${ref.bucket}/o/${encodeURIComponent(ref.objectPath)}` +
-				objectToQuery(metadata),
+			`${baseApiURL}b/${ref.bucket}/o/${encodeURIComponent(ref.objectPath)}`,
 			{
 				method: 'POST',
-				body: blob,
+				body: formData,
 				headers: {
-					'Content-Type': blob.type
+					'X-Goog-Upload-Protocol': 'multipart'
 				}
 			}
 		);
